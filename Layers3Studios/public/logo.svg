@@ -1,0 +1,25 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="200" fill="transparent"/>
+  <!-- L3 Isometric Logo -->
+  <g transform="translate(100,100) scale(0.85)">
+    <!-- L vertical bar - 3D block -->
+    <polygon points="-45,-80 -25,-90 -25,0 -45,10" fill="#1a1a2e" stroke="white" stroke-width="3" stroke-linejoin="round"/>
+    <polygon points="-25,-90 -5,-80 -5,10 -25,0" fill="#0d0d1a" stroke="white" stroke-width="3" stroke-linejoin="round"/>
+    <polygon points="-45,-80 -25,-90 -5,-80 -25,-70" fill="#252540" stroke="white" stroke-width="3" stroke-linejoin="round"/>
+    
+    <!-- L horizontal bar - 3D block -->
+    <polygon points="-45,10 -25,0 35,0 15,10" fill="#252540" stroke="white" stroke-width="3" stroke-linejoin="round"/>
+    <polygon points="-25,0 35,0 35,20 -25,20" fill="#1a1a2e" stroke="white" stroke-width="3" stroke-linejoin="round"/>
+    <polygon points="-45,10 -25,20 35,20 15,10" fill="#0d0d1a" stroke="white" stroke-width="3" stroke-linejoin="round"/>
+    
+    <!-- 3 top curve -->
+    <path d="M 5,-70 Q 5,-75 15,-80 L 45,-80 Q 60,-80 60,-65 Q 60,-50 45,-45 L 20,-40" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- 3 bottom curve -->
+    <path d="M 20,-35 L 50,-35 Q 65,-35 65,-15 Q 65,5 50,10 L 15,15 Q 5,18 5,25" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- 3D depth lines for the 3 -->
+    <path d="M 8,-73 Q 8,-78 18,-83 L 48,-83 Q 63,-83 63,-68 Q 63,-53 48,-48 L 23,-43" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2" stroke-linecap="round"/>
+    <path d="M 23,-38 L 53,-38 Q 68,-38 68,-18 Q 68,2 53,7 L 18,12 Q 8,15 8,22" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2" stroke-linecap="round"/>
+  </g>
+</svg>
