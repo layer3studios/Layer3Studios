@@ -129,6 +129,8 @@ export async function verifyTransport(): Promise<{ ok: true } | { ok: false; err
 export interface Mail {
   subject: string;
   text: string;
+  /** The styled version. Text is always sent alongside it. */
+  html?: string;
   /** Where a reply should go. The visitor's address, for studio mail. */
   replyTo?: string;
   /** Defaults to CONTACT_TO. */
@@ -144,6 +146,7 @@ export async function sendMail(mail: Mail): Promise<void> {
       replyTo: mail.replyTo,
       subject: mail.subject,
       text: mail.text,
+      html: mail.html,
     });
   } catch (err) {
     throw explain(err);

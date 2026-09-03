@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { company, promises } from "@/brand/meta";
+import { hireToStudio, hireToVisitor, reviewToStudio, reviewToVisitor } from "@/lib/email";
 import { explain, missingEnv, sendMail, verifyTransport } from "@/lib/mailer";
 
 /**
@@ -97,90 +97,47 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "That email doesn't look right." }, { status: 400 });
   }
 
-  let subject: string;
-  let lines: string[];
-  let ack: string;
+  let studio: { subject: string; html: string; text: string };
+  let visitor: { subject: string; html: string; text: string };
 
   if (kind === "review") {
     const repo = clean(body.repo ?? body.subject, 400);
-    const stack = clean(body.stack);
-    const notes = block(body.message ?? body.notes);
-    const worries = list(body.worries);
-
     if (!repo) {
       return NextResponse.json({ error: "We need a link to the repository." }, { status: 400 });
     }
-
-    subject = `Free review · ${repo}`;
-    lines = [
-      "A free review was booked.",
-      "",
-      `Repository : ${repo}`,
-      `Built with : ${stack || "-"}`,
-      `Worries    : ${worries.length ? worries.join(", ") : "-"}`,
-      "",
-      `Name       : ${name}`,
-      `Email      : ${email}`,
-      `Company    : ${org || "-"}`,
-      "",
-      "Notes:",
-      notes || "-",
-    ];
-    ack = [
-      `Hi ${name.split(" ")[0] || "there"},`,
-      "",
-      `We have your repository and it's in the queue: ${repo}`,
-      "",
-      `One of us will read it start to finish and email you a written report within ${promises.turnaroundDays} business days.`,
-      "No call is booked and none is needed. If we need read access we'll ask in reply to this message.",
-      "",
-      `Read-only. Your clone is deleted ${promises.retentionDays} days after the report. NDA on request.`,
-      "",
-      company.name,
-      company.email,
-    ].join("\n");
+    const r = {
+      name,
+      email,
+      company: org,
+      repo,
+      stack: clean(body.stack),
+      worries: list(body.worries),
+      notes: block(body.message ?? body.notes),
+      ip,
+    };
+    studio = reviewToStudio(r);
+    visitor = reviewToVisitor(r);
   } else {
-    const service = clean(body.service, 80);
-    const size = clean(body.size, 80);
-    const timeline = clean(body.timeline, 80);
     const brief = block(body.brief);
-
     if (!brief) {
       return NextResponse.json({ error: "Tell us a little about the project." }, { status: 400 });
     }
-
-    subject = `Hire · ${service || "project"}${size ? ` · ${size}` : ""}`;
-    lines = [
-      "A direct hire enquiry.",
-      "",
-      `Service    : ${service || "-"}`,
-      `Size       : ${size || "-"}`,
-      `Timeline   : ${timeline || "-"}`,
-      "",
-      `Name       : ${name}`,
-      `Email      : ${email}`,
-      `Company    : ${org || "-"}`,
-      "",
-      "Brief:",
+    const h = {
+      name,
+      email,
+      company: org,
+      service: clean(body.service, 80),
+      size: clean(body.size, 80),
+      timeline: clean(body.timeline, 80),
       brief,
-    ];
-    ack = [
-      `Hi ${name.split(" ")[0] || "there"},`,
-      "",
-      "Thanks for the brief. It's with us.",
-      "",
-      "You'll hear back from whoever would do the work, usually within a business day, with questions or a written quote sized to the project.",
-      "Nothing starts until you've agreed one in writing.",
-      "",
-      company.name,
-      company.email,
-    ].join("\n");
+      ip,
+    };
+    studio = hireToStudio(h);
+    visitor = hireToVisitor(h);
   }
 
-  lines.push("", `— sent from ${company.url} · ip ${ip}`);
-
   try {
-    await sendMail({ subject, text: lines.join("\n"), replyTo: email });
+    await sendMail({ subject: studio.subject, text: studio.text, html: studio.html, replyTo: email });
   } catch (err) {
     const e = explain(err);
     // The detail goes to the server log; the visitor gets the short version.
@@ -192,11 +149,7 @@ export async function POST(req: Request) {
 
   // The acknowledgement must never fail the request.
   try {
-    await sendMail({
-      to: email,
-      subject: kind === "review" ? `Your free review is booked · ${company.name}` : `We have your brief · ${company.name}`,
-      text: ack,
-    });
+    await sendMail({ to: email, subject: visitor.subject, text: visitor.text, html: visitor.html });
   } catch (err) {
     console.warn("[enquiry] acknowledgement not sent:", explain(err).message);
   }
@@ -204,9 +157,42 @@ export async function POST(req: Request) {
   return NextResponse.json({ ok: true });
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   if (process.env.NODE_ENV === "production") {
     return NextResponse.json({ error: "Not available." }, { status: 404 });
+  }
+
+  // Template preview, with sample data, so the emails can be checked in a browser.
+  const preview = new URL(req.url).searchParams.get("preview");
+  if (preview) {
+    const r = {
+      name: "Priya Raman",
+      email: "priya@acme.dev",
+      company: "Acme",
+      repo: "github.com/acme/api",
+      stack: "Next.js, Postgres, Stripe",
+      worries: ["Leaked keys", "Auth holes"],
+      notes: "We ship in six weeks and would like the review before that. Two engineers, no security review yet.",
+      ip: "203.0.113.7",
+    };
+    const h = {
+      name: "Sam Okafor",
+      email: "sam@build.co",
+      company: "Build Co",
+      service: "Deep security audit",
+      size: "Medium",
+      timeline: "This month",
+      brief: "Next.js app with Stripe. Two engineers, no security review yet. We ship in six weeks and want the audit done before that.",
+      ip: "203.0.113.7",
+    };
+    const html =
+      preview === "review-studio" ? reviewToStudio(r).html
+      : preview === "review-visitor" ? reviewToVisitor(r).html
+      : preview === "hire-studio" ? hireToStudio(h).html
+      : preview === "hire-visitor" ? hireToVisitor(h).html
+      : null;
+    if (!html) return NextResponse.json({ error: "preview must be review-studio, review-visitor, hire-studio or hire-visitor" }, { status: 400 });
+    return new Response(html, { headers: { "content-type": "text/html; charset=utf-8" } });
   }
   const missing = missingEnv();
   if (missing.length) {
