@@ -2,6 +2,7 @@ import DynamicIsland from "@/components/layout/DynamicIsland";
 import SmoothScroll from "@/components/layout/SmoothScroll";
 import ScrollRail from "@/components/layout/ScrollRail";
 import MobileDock from "@/components/layout/MobileDock";
+import Cursor from "@/components/layout/Cursor";
 import Footer from "@/components/layout/Footer";
 import Hero from "@/components/sections/Hero";
 import Review from "@/components/sections/Review";
@@ -31,6 +32,7 @@ export default function Page() {
       <ScrollRail />
       <DynamicIsland />
       <MobileDock />
+      <Cursor />
 
       <main>
         <Hero />

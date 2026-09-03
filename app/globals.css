@@ -293,6 +293,20 @@ html::-webkit-scrollbar {
   background: rgba(0, 0, 0, 0.45);
 }
 
+/* Cursors. Tailwind v4's preflight gives buttons the arrow; anything that
+   does something on click gets the hand, text stays text, disabled stays
+   the arrow. The 3D stages set their own grab hand. */
+a[href],
+button:not(:disabled),
+[role="button"],
+label[for],
+summary {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+
 /* Keyboard focus only — never a ring on a mouse click. */
 :focus-visible {
   outline: 2px solid var(--color-accent);

@@ -21,6 +21,7 @@ import SectionHeading from "@/components/ui/SectionHeading";
 import SeverityMark from "@/components/ui/SeverityMark";
 import { useDeviceCapabilities } from "@/hooks/useDeviceCapabilities";
 import { useOnScreen } from "@/hooks/useOnScreen";
+import { useStagePointer } from "@/hooks/useStagePointer";
 
 const CodebaseModel = dynamic(() => import("@/components/three/CodebaseModel"), { ssr: false });
 
@@ -65,7 +66,7 @@ export default function Review() {
   const [active, setActive] = useState(-1);
   const { allowWebgl, ready } = useDeviceCapabilities();
   const { ref: stageRef, onScreen } = useOnScreen<HTMLDivElement>("200px");
-  const pointer = useRef({ x: 0, y: 0 });
+  const { pointer, sectionBind, stageBind } = useStagePointer();
   const { openBooking } = useBooking();
   const reduce = useReducedMotion();
 
@@ -75,10 +76,7 @@ export default function Review() {
     <section
       id="review"
       className="overflow-x-clip px-[var(--gutter)] py-28 sm:py-36"
-      onPointerMove={(e) => {
-        if (e.pointerType === "touch") return;
-        pointer.current = { x: (e.clientX / window.innerWidth) * 2 - 1, y: (e.clientY / window.innerHeight) * 2 - 1 };
-      }}
+      {...sectionBind}
     >
       <div className="mx-auto max-w-6xl">
         <SectionHeading eyebrow={review.eyebrow} heading={review.heading} intro={review.intro} centred />
@@ -88,8 +86,10 @@ export default function Review() {
           <div className="lg:col-span-6">
             <div
               ref={stageRef}
-              className="sticky z-10 overflow-hidden rounded-3xl border border-ink-500 bg-ink-700"
+              data-cursor="grab"
+              className="sticky z-10 cursor-grab touch-pan-y overflow-hidden rounded-3xl border border-ink-500 bg-ink-700 active:cursor-grabbing"
               style={{ top: "calc(var(--island-clear) + 0.5rem)" }}
+              {...stageBind}
             >
               <div className="relative h-[46svh] min-h-[18rem] lg:h-[calc(100svh-var(--island-clear)-3rem)] lg:min-h-[30rem]">
                 <div
@@ -192,8 +192,8 @@ export default function Review() {
                 aria-hidden="true"
                 className="inline-block"
                 variants={{
-                  hidden: { opacity: 0, y: 10, filter: "blur(4px)" },
-                  shown: { opacity: 1, y: 0, filter: "blur(0px)", transition: { delay: i * 0.03, duration: 0.5, ease: ease.enter } },
+                  hidden: { opacity: 0, y: 10 },
+                  shown: { opacity: 1, y: 0, transition: { delay: i * 0.03, duration: 0.5, ease: ease.enter } },
                 }}
               >
                 {w}&nbsp;

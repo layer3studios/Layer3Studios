@@ -44,11 +44,10 @@ export const tiltSpring: Transition = {
 
 /** Standard scroll-reveal for a block of content. */
 export const revealVariants: Variants = {
-  hidden: { opacity: 0, y: 28, filter: "blur(6px)" },
+  hidden: { opacity: 0, y: 28 },
   shown: {
     opacity: 1,
     y: 0,
-    filter: "blur(0px)",
     transition: { duration: duration.slow, ease: ease.enter },
   },
 };

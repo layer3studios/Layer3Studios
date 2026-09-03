@@ -8,6 +8,7 @@ import { useBooking } from "@/components/booking/BookingContext";
 import SectionHeading from "@/components/ui/SectionHeading";
 import { useDeviceCapabilities } from "@/hooks/useDeviceCapabilities";
 import { useOnScreen } from "@/hooks/useOnScreen";
+import { useStagePointer } from "@/hooks/useStagePointer";
 
 const VaultModel = dynamic(() => import("@/components/three/VaultModel"), { ssr: false });
 
@@ -33,7 +34,7 @@ export default function Safety() {
   const [active, setActive] = useState(-1);
   const { allowWebgl, ready } = useDeviceCapabilities();
   const { ref: stageRef, onScreen } = useOnScreen<HTMLDivElement>("200px");
-  const pointer = useRef({ x: 0, y: 0 });
+  const { pointer, sectionBind, stageBind } = useStagePointer();
   const reduce = useReducedMotion();
   const { openHire } = useBooking();
 
@@ -43,10 +44,7 @@ export default function Safety() {
     <section
       id="safety"
       className="overflow-x-clip px-[var(--gutter)] py-28 sm:py-36"
-      onPointerMove={(e) => {
-        if (e.pointerType === "touch") return;
-        pointer.current = { x: (e.clientX / window.innerWidth) * 2 - 1, y: (e.clientY / window.innerHeight) * 2 - 1 };
-      }}
+      {...sectionBind}
     >
       <div className="mx-auto max-w-6xl">
         <SectionHeading eyebrow={safety.eyebrow} heading={safety.heading} intro={safety.intro} centred />
@@ -56,8 +54,10 @@ export default function Safety() {
           <div className="lg:order-2 lg:col-span-6">
             <div
               ref={stageRef}
-              className="sticky z-10 overflow-hidden rounded-3xl border border-ink-500 bg-ink-700"
+              data-cursor="grab"
+              className="sticky z-10 cursor-grab touch-pan-y overflow-hidden rounded-3xl border border-ink-500 bg-ink-700 active:cursor-grabbing"
               style={{ top: "calc(var(--island-clear) + 0.5rem)" }}
+              {...stageBind}
             >
               <div className="relative h-[46svh] min-h-[18rem] lg:h-[calc(100svh-var(--island-clear)-3rem)] lg:min-h-[30rem]">
                 <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(55%_50%_at_50%_55%,rgba(255,255,255,0.07),transparent_70%)]" />
@@ -182,8 +182,8 @@ export default function Safety() {
                   aria-hidden="true"
                   className="inline-block"
                   variants={{
-                    hidden: { opacity: 0, y: 12, filter: "blur(4px)" },
-                    shown: { opacity: 1, y: 0, filter: "blur(0px)", transition: { delay: 0.15 + i * 0.05, duration: 0.5, ease: ease.enter } },
+                    hidden: { opacity: 0, y: 12 },
+                    shown: { opacity: 1, y: 0, transition: { delay: 0.15 + i * 0.05, duration: 0.5, ease: ease.enter } },
                   }}
                 >
                   {w}&nbsp;

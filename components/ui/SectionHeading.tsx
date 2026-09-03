@@ -9,6 +9,8 @@ interface SectionHeadingProps {
   intro?: string;
   /** Centres the block. Used where the section has no asymmetric content. */
   centred?: boolean;
+  /** On a white section the type is ink instead of vellum. */
+  tone?: "ink" | "paper";
 }
 
 /**
@@ -24,7 +26,9 @@ export default function SectionHeading({
   heading,
   intro,
   centred = false,
+  tone = "ink",
 }: SectionHeadingProps) {
+  const onPaper = tone === "paper";
   const reduce = useReducedMotion();
   const words = heading.split(" ");
 
@@ -40,18 +44,18 @@ export default function SectionHeading({
           hidden: { opacity: 0, y: 8 },
           shown: { opacity: 1, y: 0, transition: { duration: 0.5, ease: ease.enter } },
         }}
-        className={`label mb-5 flex items-center gap-3 ${centred ? "justify-center" : ""}`}
+        className={`label mb-5 flex items-center gap-3 ${centred ? "justify-center" : ""} ${onPaper ? "!text-ink-900/50" : ""}`}
       >
         <motion.span
           aria-hidden="true"
-          className="block h-px w-6 origin-left bg-faint"
+          className={`block h-px w-6 origin-left ${onPaper ? "bg-ink-900/40" : "bg-faint"}`}
           variants={{ hidden: { scaleX: 0 }, shown: { scaleX: 1, transition: { duration: 0.6, ease: ease.settle } } }}
         />
         {eyebrow}
       </motion.p>
 
       <h2
-        className="font-display text-vellum"
+        className={`font-display ${onPaper ? "text-ink-900" : "text-vellum"}`}
         style={{ fontSize: scale.section, perspective: "600px" }}
         aria-label={heading}
       >
@@ -79,15 +83,14 @@ export default function SectionHeading({
       {intro && (
         <motion.p
           variants={{
-            hidden: { opacity: 0, y: 14, filter: "blur(6px)" },
+            hidden: { opacity: 0, y: 14 },
             shown: {
               opacity: 1,
               y: 0,
-              filter: "blur(0px)",
               transition: { duration: 0.7, delay: 0.25 + words.length * 0.06, ease: ease.enter },
             },
           }}
-          className="mt-6 leading-relaxed text-muted"
+          className={`mt-6 leading-relaxed ${onPaper ? "text-ink-900/65" : "text-muted"}`}
           style={{ fontSize: scale.lead }}
         >
           {intro}

@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useMotionValue, useReducedMotion, useTransform, type PanInfo } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ease, faq, faqItems } from "@/brand";
 import { useBooking } from "@/components/booking/BookingContext";
@@ -28,6 +28,22 @@ export default function Faq() {
   const { openHire } = useBooking();
   const item = faqItems[active];
   const cardRef = useRef<HTMLDivElement>(null);
+
+  // The card follows the finger. Horizontal travel tilts it a little and
+  // lifts the sheet beneath, the way a card lifts off a stack.
+  const dragX = useMotionValue(0);
+  const dragRotate = useTransform(dragX, [-240, 0, 240], [-6, 0, 6]);
+  const deckLift = useTransform(dragX, [-240, 0, 240], [1, 0, 1]);
+  const deckScale = useTransform(deckLift, [0, 1], [1, 1.015]);
+  const deckY = useTransform(deckLift, [0, 1], [0, -6]);
+
+  const onDragEnd = (_: unknown, info: PanInfo) => {
+    const { offset, velocity } = info;
+    // A decisive flick or a long enough pull turns the card; anything less
+    // springs back.
+    if (offset.x < -70 || velocity.x < -450) go(active + 1);
+    else if (offset.x > 70 || velocity.x > 450) go(active - 1);
+  };
 
   const go = useCallback(
     (to: number) => {
@@ -140,16 +156,32 @@ export default function Faq() {
                   key={active}
                   custom={dir}
                   variants={{
-                    enter: (d: number) => (reduce ? { opacity: 0 } : { rotateY: d * 70, x: d * 60, opacity: 0 }),
-                    centre: { rotateY: 0, x: 0, opacity: 1 },
-                    exit: (d: number) => (reduce ? { opacity: 0 } : { rotateY: d * -60, x: d * -60, opacity: 0 }),
+                    enter: (d: number) =>
+                      reduce ? { opacity: 0 } : { x: d * 140, rotateY: d * 28, rotateZ: d * 3, scale: 0.96, opacity: 0 },
+                    centre: { x: 0, rotateY: 0, rotateZ: 0, scale: 1, opacity: 1 },
+                    exit: (d: number) =>
+                      reduce ? { opacity: 0 } : { x: d * -160, rotateY: d * -24, rotateZ: d * -4, scale: 0.96, opacity: 0 },
                   }}
                   initial="enter"
                   animate="centre"
                   exit="exit"
-                  transition={{ duration: reduce ? 0.15 : 0.38, ease: ease.settle }}
-                  className="paper absolute inset-0 flex flex-col rounded-3xl bg-vellum p-7 text-ink-900 shadow-[0_40px_100px_rgba(0,0,0,0.6)] sm:p-10"
-                  style={{ transformOrigin: dir > 0 ? "left center" : "right center", backfaceVisibility: "hidden" }}
+                  transition={
+                    reduce
+                      ? { duration: 0.15 }
+                      : { type: "spring", stiffness: 300, damping: 30, mass: 0.9, opacity: { duration: 0.22 } }
+                  }
+                  drag={reduce ? false : "x"}
+                  dragConstraints={{ left: 0, right: 0 }}
+                  dragElastic={0.55}
+                  dragMomentum={false}
+                  onDragEnd={onDragEnd}
+                  className="paper absolute inset-0 flex cursor-grab touch-pan-y select-none flex-col rounded-3xl bg-vellum p-7 text-ink-900 shadow-[0_40px_100px_rgba(0,0,0,0.6)] active:cursor-grabbing sm:p-10"
+                  style={{
+                    x: dragX,
+                    rotateZ: dragRotate,
+                    transformOrigin: "50% 120%",
+                    backfaceVisibility: "hidden",
+                  }}
                 >
                   {/* Card head. */}
                   <div className="flex items-center justify-between border-b border-ink-900 pb-4 font-mono text-[0.65rem] uppercase tracking-[0.16em] text-ink-900/55">
@@ -167,8 +199,8 @@ export default function Faq() {
                         key={`${active}-${i}`}
                         aria-hidden="true"
                         className="inline-block"
-                        initial={reduce ? false : { opacity: 0, y: 8, filter: "blur(4px)" }}
-                        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                        initial={reduce ? false : { opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.25 + i * 0.015, duration: 0.4, ease: ease.enter }}
                       >
                         {w}&nbsp;
@@ -196,19 +228,28 @@ export default function Faq() {
                         →
                       </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => openHire()}
-                      className="font-mono text-[0.7rem] uppercase tracking-[0.16em] text-ink-900/60 underline decoration-ink-900/30 underline-offset-[6px] transition-colors hover:text-ink-900 hover:decoration-ink-900"
-                    >
-                      Not here? Ask us directly
-                    </button>
+                    <div className="flex items-center gap-4">
+                      <span className="touch-only font-mono text-[0.65rem] uppercase tracking-[0.16em] text-ink-900/40">
+                        Swipe
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => openHire()}
+                        className="font-mono text-[0.7rem] uppercase tracking-[0.16em] text-ink-900/60 underline decoration-ink-900/30 underline-offset-[6px] transition-colors hover:text-ink-900 hover:decoration-ink-900"
+                      >
+                        Not here? Ask us directly
+                      </button>
+                    </div>
                   </div>
                 </motion.article>
               </AnimatePresence>
 
               {/* The rest of the deck, peeking out beneath. */}
-              <div aria-hidden="true" className="absolute inset-x-3 -bottom-2 top-3 -z-10 rounded-3xl bg-vellum/40" />
+              <motion.div
+                aria-hidden="true"
+                className="absolute inset-x-3 -bottom-2 top-3 -z-10 rounded-3xl bg-vellum/40"
+                style={{ scale: deckScale, y: deckY }}
+              />
               <div aria-hidden="true" className="absolute inset-x-6 -bottom-4 top-6 -z-20 rounded-3xl bg-vellum/20" />
             </div>
           </motion.div>

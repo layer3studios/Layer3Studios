@@ -24,8 +24,11 @@ export type ModelKind = "shield" | "wrench" | "stack";
 
 const WHITE = new Color("#ffffff");
 const GREY = new Color("#5c5c5c");
+/** On paper the objects are ink: near-black metal with a graphite wire. */
+const INK = new Color("#1a1917");
+const GRAPHITE = new Color("#6b675f");
 
-function Shield({ pulse }: { pulse: RefObject<number> }) {
+function Shield({ pulse, ink, wire }: { pulse: RefObject<number>; ink: Color; wire: Color }) {
   const cage = useRef<Group>(null);
   const core = useRef<Group>(null);
   useFrame((_, dt) => {
@@ -47,24 +50,24 @@ function Shield({ pulse }: { pulse: RefObject<number> }) {
       <group ref={core}>
         <mesh>
           <icosahedronGeometry args={[0.72, 1]} />
-          <meshStandardMaterial color={WHITE} flatShading roughness={0.35} metalness={0.2} />
+          <meshStandardMaterial color={ink} flatShading roughness={0.35} metalness={0.2} />
         </mesh>
       </group>
       <group ref={cage}>
         <mesh>
           <icosahedronGeometry args={[1.15, 1]} />
-          <meshBasicMaterial color={WHITE} wireframe transparent opacity={0.55} />
+          <meshBasicMaterial color={ink} wireframe transparent opacity={0.55} />
         </mesh>
         <mesh rotation={[0.4, 0.8, 0]}>
           <icosahedronGeometry args={[1.32, 0]} />
-          <meshBasicMaterial color={GREY} wireframe transparent opacity={0.35} />
+          <meshBasicMaterial color={wire} wireframe transparent opacity={0.35} />
         </mesh>
       </group>
     </>
   );
 }
 
-function Wrench({ pulse }: { pulse: RefObject<number> }) {
+function Wrench({ pulse, ink, wire }: { pulse: RefObject<number>; ink: Color; wire: Color }) {
   const g = useRef<Group>(null);
   const spin = useRef(0);
   useFrame((_, dt) => {
@@ -78,18 +81,18 @@ function Wrench({ pulse }: { pulse: RefObject<number> }) {
     <group ref={g}>
       <mesh>
         <torusKnotGeometry args={[0.72, 0.22, 140, 18, 2, 3]} />
-        <meshStandardMaterial color={WHITE} roughness={0.25} metalness={0.6} />
+        <meshStandardMaterial color={ink} roughness={0.25} metalness={0.6} />
       </mesh>
       <mesh scale={1.06}>
         <torusKnotGeometry args={[0.72, 0.22, 70, 9, 2, 3]} />
-        <meshBasicMaterial color={GREY} wireframe transparent opacity={0.25} />
+        <meshBasicMaterial color={wire} wireframe transparent opacity={0.25} />
       </mesh>
     </group>
   );
 }
 
 const STACK = 5;
-function Stack({ pulse }: { pulse: RefObject<number> }) {
+function Stack({ pulse, ink, wire }: { pulse: RefObject<number>; ink: Color; wire: Color }) {
   const mesh = useRef<InstancedMesh>(null);
   const dummy = useMemo(() => new Object3D(), []);
   const g = useRef<Group>(null);
@@ -125,11 +128,11 @@ function Stack({ pulse }: { pulse: RefObject<number> }) {
     <group ref={g} rotation={[0.3, 0.6, 0]}>
       <instancedMesh ref={mesh} args={[undefined, undefined, STACK * 3]}>
         <boxGeometry args={[0.44, 0.44, 0.44]} />
-        <meshStandardMaterial color={WHITE} roughness={0.5} metalness={0.1} />
+        <meshStandardMaterial color={ink} roughness={0.5} metalness={0.1} />
       </instancedMesh>
       <mesh>
         <boxGeometry args={[1.65, 2.65, 0.6]} />
-        <meshBasicMaterial color={GREY} wireframe transparent opacity={0.25} />
+        <meshBasicMaterial color={wire} wireframe transparent opacity={0.25} />
       </mesh>
     </group>
   );
@@ -147,12 +150,17 @@ export default function ServiceModel({
   kind,
   pulse,
   active,
+  paper = false,
 }: {
   kind: ModelKind;
   pulse: RefObject<number>;
   /** Parks the frame loop when the card is off screen. */
   active: boolean;
+  /** On a white section the object is drawn in ink. */
+  paper?: boolean;
 }) {
+  const core = paper ? INK : WHITE;
+  const wire = paper ? GRAPHITE : GREY;
   return (
     <Canvas
       camera={{ fov: 32, position: [0, 0, 6] }}
@@ -162,14 +170,14 @@ export default function ServiceModel({
       style={{ position: "absolute", inset: 0, pointerEvents: "none" }}
       onCreated={({ gl }) => gl.setClearAlpha(0)}
     >
-      <ambientLight intensity={0.35} />
-      <directionalLight position={[-3, 4, 5]} intensity={2.2} />
-      <directionalLight position={[4, -2, -3]} intensity={0.6} />
+      <ambientLight intensity={paper ? 1.4 : 0.35} />
+      <directionalLight position={[-3, 4, 5]} intensity={paper ? 3.2 : 2.2} />
+      <directionalLight position={[4, -2, -3]} intensity={paper ? 1.6 : 0.6} />
       <Decay pulse={pulse} />
       <Float speed={1.6} rotationIntensity={0.4} floatIntensity={0.8}>
-        {kind === "shield" && <Shield pulse={pulse} />}
-        {kind === "wrench" && <Wrench pulse={pulse} />}
-        {kind === "stack" && <Stack pulse={pulse} />}
+        {kind === "shield" && <Shield pulse={pulse} ink={core} wire={wire} />}
+        {kind === "wrench" && <Wrench pulse={pulse} ink={core} wire={wire} />}
+        {kind === "stack" && <Stack pulse={pulse} ink={core} wire={wire} />}
       </Float>
     </Canvas>
   );

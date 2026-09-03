@@ -20,3 +20,4 @@ export * from "./content/faq";
 export * from "./content/contact";
 export * from "./content/booking";
 export * from "./content/hire";
+export * from "./content/legal";
