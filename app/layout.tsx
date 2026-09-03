@@ -1,28 +1,64 @@
 import "./globals.css";
-import type { Metadata } from "next";
-import { Space_Grotesk, Inter } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Instrument_Serif, Inter_Tight, JetBrains_Mono } from "next/font/google";
+import { company, seo } from "@/brand";
 
-const spaceGrotesk = Space_Grotesk({
+/**
+ * Three faces, three jobs:
+ *   Instrument Serif — the report. Display only, used large and sparingly.
+ *   Inter Tight      — prose.
+ *   JetBrains Mono   — anything a machine produced: paths, severities, counts.
+ */
+
+const display = Instrument_Serif({
   subsets: ["latin"],
-  variable: "--font-heading",
+  weight: "400",
+  variable: "--font-display-face",
   display: "swap",
 });
 
-const inter = Inter({
+const body = Inter_Tight({
   subsets: ["latin"],
-  variable: "--font-body",
+  variable: "--font-body-face",
+  display: "swap",
+});
+
+const mono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono-face",
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "layer3studio — Premium Design & Engineering Studio",
-  description:
-    "Premium web products, SaaS UI, and full-stack builds by layer3studio. We design, build, and launch products that feel polished from day one.",
+  title: seo.title,
+  description: seo.description,
+  appleWebApp: {
+    capable: true,
+    // Black-translucent lets the page run under the status bar and the
+    // island, which is what makes the safe-area handling matter.
+    statusBarStyle: "black-translucent",
+    title: company.name,
+  },
   openGraph: {
-    title: "layer3studio — Premium Design & Engineering Studio",
-    description: "Premium web products, SaaS UI, and full-stack builds.",
+    title: seo.title,
+    description: seo.description,
+    siteName: company.name,
     type: "website",
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#000000",
+  width: "device-width",
+  initialScale: 1,
+  /**
+   * Draws the page edge to edge, underneath the notch, Dynamic Island and home
+   * indicator. Required for env(safe-area-inset-*) to report anything — the
+   * insets are then paid back in globals.css.
+   */
+  viewportFit: "cover",
+  /** Zoom stays enabled. Locking it out is an accessibility failure. */
+  maximumScale: 5,
 };
 
 export default function RootLayout({
@@ -31,12 +67,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${spaceGrotesk.variable} ${inter.variable}`}>
-      <body>
-        <div className="min-h-screen bg-radial-soft overflow-x-hidden">
-          {children}
-        </div>
-      </body>
+    <html
+      lang="en"
+      className={`${display.variable} ${body.variable} ${mono.variable}`}
+    >
+      <body className="grain">{children}</body>
     </html>
   );
 }

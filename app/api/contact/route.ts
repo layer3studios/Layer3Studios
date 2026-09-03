@@ -35,7 +35,7 @@ export async function POST(req: Request) {
     const transporter = getTransport();
 
     await transporter.sendMail({
-      from: `layer3studio <${from}>`,
+      from: `layer3studios <${from}>`,
       to,
       replyTo: email,
       subject: `New inquiry: ${subject}`,

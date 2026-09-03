@@ -1,459 +1,514 @@
 @import "tailwindcss";
 
-/* ── Design tokens ── */
+/* ===========================================================================
+   Theme tokens. Mirrors brand/colors.ts — keep the two in sync.
+   Tailwind v4 is CSS-first, so this block *is* the config.
+   =========================================================================== */
+
+@theme {
+  /* Monochrome. No hue anywhere — see brand/colors.ts for why. */
+  --color-ink-900: #000000;
+  --color-ink-800: #050505;
+  --color-ink-700: #0a0a0a;
+  --color-ink-600: #121212;
+  --color-ink-500: #1f1f1f;
+  --color-ink-400: #333333;
+
+  --color-vellum: #ffffff;
+  --color-muted: #9a9a9a;
+  --color-faint: #5c5c5c;
+
+  --color-accent: #ffffff;
+
+  --font-display: var(--font-display-face), ui-serif, Georgia, serif;
+  --font-body: var(--font-body-face), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono-face), ui-monospace, SFMono-Regular, monospace;
+
+  --ease-settle: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-wipe: cubic-bezier(0.76, 0, 0.24, 1);
+}
+
+/* ===========================================================================
+   Safe areas.
+
+   The site is opened on notched iPhones (Dynamic Island), Android punch-holes,
+   and in landscape where the insets move to the sides. The viewport is set to
+   viewport-fit=cover in layout.tsx, so we must pay the insets back manually or
+   content slides under the island and the home indicator.
+
+   --island-top is what the floating nav uses: the real inset, plus breathing
+   room, with a sane floor on devices that report nothing.
+   =========================================================================== */
+
 :root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+
+  --island-top: max(0.75rem, calc(var(--safe-top) + 0.5rem));
+  /* Total vertical space the floating nav occupies: its offset plus its own
+     height. Any content that must not sit under it pays this. */
+  --island-clear: calc(var(--island-top) + 4rem);
+  --gutter: max(1.25rem, var(--safe-left), var(--safe-right));
+  /* Below sm the nav is a dock at the bottom, so nothing needs to clear the
+     top except the hardware inset itself. The dock's own clearance is paid
+     by the footer. */
+  --dock-clear: calc(4.5rem + var(--safe-bottom));
+
+  /* Real viewport height. dvh accounts for the collapsing mobile URL bar. */
+  --vh: 100dvh;
+
   color-scheme: dark;
-  --bg-primary: #050510;
-  --bg-card: rgba(255, 255, 255, 0.03);
-  --border-subtle: rgba(255, 255, 255, 0.07);
-  --border-glow: rgba(255, 255, 255, 0.12);
-  --accent-indigo: #6366f1;
-  --accent-violet: #8b5cf6;
-  --accent-cyan: #22d3ee;
-  --accent-emerald: #10b981;
-  --accent-pink: #ec4899;
-  --accent-amber: #f59e0b;
-  --gradient-primary: linear-gradient(135deg, var(--accent-indigo), var(--accent-violet), var(--accent-cyan));
-  --gradient-warm: linear-gradient(135deg, var(--accent-pink), var(--accent-violet), var(--accent-indigo));
-  --font-heading: 'Space Grotesk', sans-serif;
-  --font-body: 'Inter', sans-serif;
+}
+
+@supports not (height: 100dvh) {
+  :root {
+    --vh: 100vh;
+  }
+}
+
+@media (max-width: 639px) {
+  :root {
+    --island-clear: calc(var(--safe-top) + 1rem);
+  }
+  html {
+    scroll-padding-top: calc(var(--safe-top) + 1.5rem);
+  }
+}
+
+/* ===========================================================================
+   Base
+   =========================================================================== */
+
+* {
+  min-width: 0;
 }
 
 html {
   scroll-behavior: smooth;
-}
-
-html,
-body {
-  height: 100%;
+  /* Anchor targets clear the floating island. */
+  scroll-padding-top: calc(var(--island-top) + 5rem);
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: var(--bg-primary);
-  color: #e2e8f0;
+  background-color: var(--color-ink-900);
+  color: var(--color-vellum);
   font-family: var(--font-body);
+  line-height: 1.6;
+  overflow-x: hidden;
+  /* Prevents rubber-band flash of white behind the page on iOS. */
+  overscroll-behavior-y: none;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Form controls inherit the page's type and colour rather than the UA's.
+   This MUST live in @layer base: Tailwind v4 emits utilities into
+   @layer utilities, and unlayered rules outrank every layer regardless of
+   specificity. Written bare, `color: inherit` silently beat `text-ink-900`
+   on every <button> on the site (white-on-white CTAs), and the `font`
+   shorthand beat `font-medium` and every text-size utility with it. */
+@layer base {
+  input,
+  textarea,
+  select,
+  button {
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    font-style: inherit;
+    line-height: inherit;
+    letter-spacing: inherit;
+    color: inherit;
+  }
+}
+
+/* iOS Safari zooms the viewport when a text field under 16px takes focus.
+   This floor is deliberately left unlayered so it outranks utilities — a 15px
+   input is not worth a zoom jump. Buttons are excluded: they are not
+   focus-zoom targets, and the floor would clobber their type scale. */
+input:not([type="button"]):not([type="submit"]):not([type="reset"]),
+textarea,
+select {
+  font-size: max(1rem, 16px);
 }
 
 ::selection {
-  background: rgba(99, 102, 241, 0.4);
-  color: #fff;
+  background: var(--color-accent);
+  color: var(--color-vellum);
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-family: var(--font-heading);
+/* The hero is paper. Selection and focus invert there. */
+.paper ::selection {
+  background: var(--color-ink-900);
+  color: var(--color-vellum);
+}
+.paper :focus-visible {
+  outline-color: var(--color-ink-900);
 }
 
-a {
-  color: rgba(255, 255, 255, 0.9);
-  transition: color 0.2s ease;
-}
-
-a:hover {
-  color: #fff;
-}
-
-
-/* ── Keyframes ── */
-@keyframes float {
-
-  0%,
-  100% {
-    transform: translateY(0px) rotate(0deg);
-  }
-
-  33% {
-    transform: translateY(-12px) rotate(1deg);
-  }
-
-  66% {
-    transform: translateY(6px) rotate(-1deg);
-  }
-}
-
-@keyframes float-slow {
-
-  0%,
-  100% {
-    transform: translateY(0) scale(1);
-  }
-
-  50% {
-    transform: translateY(-20px) scale(1.02);
-  }
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: -200% center;
-  }
-
-  100% {
-    background-position: 200% center;
-  }
-}
-
-@keyframes gradient-flow {
-  0% {
-    background-position: 0% 50%;
-  }
-
-  50% {
-    background-position: 100% 50%;
-  }
-
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-@keyframes pulse-glow {
-
-  0%,
-  100% {
-    opacity: 0.6;
-    transform: scale(1);
-  }
-
-  50% {
-    opacity: 1;
-    transform: scale(1.05);
-  }
-}
-
-@keyframes pulse-ring {
-  0% {
-    transform: scale(1);
-    opacity: 0.8;
-  }
-
-  100% {
-    transform: scale(2.2);
-    opacity: 0;
-  }
-}
-
-@keyframes orb-drift-1 {
-
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-
-  25% {
-    transform: translate(50px, -30px) scale(1.1);
-  }
-
-  50% {
-    transform: translate(-20px, 20px) scale(0.95);
-  }
-
-  75% {
-    transform: translate(30px, 40px) scale(1.05);
-  }
-}
-
-@keyframes orb-drift-2 {
-
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-
-  25% {
-    transform: translate(-40px, 20px) scale(1.05);
-  }
-
-  50% {
-    transform: translate(30px, -40px) scale(1.1);
-  }
-
-  75% {
-    transform: translate(-20px, -10px) scale(0.95);
-  }
-}
-
-@keyframes orb-drift-3 {
-
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-
-  25% {
-    transform: translate(20px, 40px) scale(0.95);
-  }
-
-  50% {
-    transform: translate(-50px, -20px) scale(1.1);
-  }
-
-  75% {
-    transform: translate(40px, -30px) scale(1.05);
-  }
-}
-
-@keyframes spin-slow {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-
-/* ── Component classes (plain CSS, no @apply) ── */
-
-/* Glass card */
-.glass {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-}
-
-.glass-hover {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.glass-hover:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.14);
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.08),
-    0 20px 60px -10px rgba(0, 0, 0, 0.5),
-    0 0 40px -15px rgba(99, 102, 241, 0.15);
-  transform: translateY(-4px);
-}
-
-/* Gradient border card */
-.gradient-border {
-  position: relative;
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 1.5rem;
+/* Marquee strip in the footer. */
+.marquee {
   overflow: hidden;
+  white-space: nowrap;
+}
+.marquee-track {
+  display: inline-flex;
+  animation: marquee 40s linear infinite;
+}
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
 }
 
-.gradient-border::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  padding: 1px;
-  border-radius: inherit;
-  background: linear-gradient(135deg,
-      rgba(99, 102, 241, 0.4),
-      rgba(139, 92, 246, 0.2),
-      rgba(34, 211, 238, 0.3),
-      rgba(139, 92, 246, 0.2),
-      rgba(99, 102, 241, 0.4));
-  background-size: 300% 300%;
-  animation: gradient-flow 6s ease infinite;
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
+/* Orbiting labels in the contact slab. */
+.orbit {
+  animation-name: orbit;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+@keyframes orbit {
+  from { transform: rotate(0deg) translate(var(--r)) rotate(0deg); }
+  to   { transform: rotate(360deg) translate(var(--r)) rotate(-360deg); }
+}
+
+/* The review grid's scan. Tiles wait in the dark until the line has passed. */
+.bento-tile {
+  transition:
+    opacity 0.7s var(--ease-settle),
+    transform 0.7s var(--ease-settle),
+    filter 0.7s var(--ease-settle);
+}
+.bento-tile[data-lit="false"] {
+  opacity: 0.16;
+  transform: translateY(28px) rotateX(10deg);
+  filter: grayscale(1) blur(1px);
   pointer-events: none;
 }
-
-/* Shadow variants */
-.shadow-glow {
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.06),
-    0 24px 70px rgba(0, 0, 0, 0.55);
+.bento-tile[data-lit="true"] {
+  animation: tile-flash 0.7s var(--ease-settle);
+}
+@keyframes tile-flash {
+  0%   { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+  20%  { box-shadow: 0 0 40px 2px rgba(255,255,255,0.35); }
+  100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bento-tile[data-lit="false"] { opacity: 1; transform: none; filter: none; pointer-events: auto; }
 }
 
-.shadow-glow-lg {
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.06),
-    0 32px 80px rgba(0, 0, 0, 0.6),
-    0 0 60px -20px rgba(99, 102, 241, 0.2);
-}
+/* ===========================================================================
+   The ledger (review section).
 
-/* Primary button */
-.btn-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0.75rem;
-  padding: 0.625rem 1.5rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  transition: all 0.3s ease-out;
-  background: linear-gradient(135deg, var(--accent-indigo), var(--accent-violet));
-  color: white;
+   Rows of claim + evidence with a numbered rail on the left. Below lg the
+   rail is hidden and the pair stacks.
+   =========================================================================== */
+
+.ledger {
+  display: grid;
+  gap: 1rem;
+}
+.ledger-row {
   position: relative;
-  overflow: hidden;
-  cursor: pointer;
-  border: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+.ledger-n {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .ledger {
+    gap: 1.25rem;
+    padding-left: 3.25rem;
+  }
+  .ledger-row {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 1.25rem;
+    min-height: 24rem;
+  }
+  .ledger-strip {
+    min-height: 0;
+  }
+  .ledger-claim { grid-column: span 5; }
+  .ledger-evidence { grid-column: span 7; }
+  .ledger-n {
+    position: absolute;
+    left: -3.25rem;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    width: 2rem;
+  }
+  .ledger-n-line {
+    flex: 1;
+    width: 1px;
+    background: var(--color-ink-500);
+  }
 }
 
-.btn-primary::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  background-size: 200% 100%;
-  animation: shimmer 3s ease infinite;
-  pointer-events: none;
+/* ===========================================================================
+   Scrollbars.
+
+   The page scrollbar is hidden and replaced by the ScrollRail component.
+   Inner scroll areas (modals, code sheets) keep a native bar, drawn thin and
+   quiet, with a thumb that brightens and thickens while the pointer is over
+   the area.
+   =========================================================================== */
+
+html {
+  scrollbar-width: none;
+}
+html::-webkit-scrollbar {
+  display: none;
 }
 
-.btn-primary:hover {
-  box-shadow: 0 8px 30px -5px rgba(99, 102, 241, 0.5);
-  transform: translateY(-2px);
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-ink-500) transparent;
+}
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--color-ink-500);
+  border-radius: 999px;
+  transition: background 0.3s var(--ease-settle);
+}
+*:hover::-webkit-scrollbar-thumb {
+  background: var(--color-muted);
+}
+.paper *::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.18);
+}
+.paper *:hover::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.45);
 }
 
-/* Ghost button */
-.btn-ghost {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0.75rem;
-  padding: 0.625rem 1.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  transition: all 0.3s ease-out;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.9);
-  cursor: pointer;
+/* Keyboard focus only — never a ring on a mouse click. */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+  border-radius: 4px;
 }
 
-.btn-ghost:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.2);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.3);
+/* ===========================================================================
+   Typography helpers
+   =========================================================================== */
+
+.font-display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 0.94;
 }
 
-/* Form input */
-.input {
-  width: 100%;
-  border-radius: 0.75rem;
-  padding: 0.75rem 1rem;
-  font-size: 0.875rem;
-  outline: none;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: white;
-  transition: all 0.3s ease;
+.label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-faint);
 }
 
-.input::placeholder {
-  color: rgba(255, 255, 255, 0.3);
+/* ===========================================================================
+   3D primitives.
+
+   Every card lives inside a perspective context and its contents sit on
+   translateZ layers, so the tilt produces genuine parallax between layers
+   instead of a flat rotated rectangle.
+   =========================================================================== */
+
+.scene {
+  /* Shorter perspective than is conventional. The tilt has to be visible at a
+     glance, not only when you go looking for it. */
+  perspective: 780px;
+  perspective-origin: 50% 50%;
 }
 
-.input:focus {
-  border-color: rgba(99, 102, 241, 0.5);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15), 0 0 20px -5px rgba(99, 102, 241, 0.2);
-  background: rgba(255, 255, 255, 0.06);
+.card-3d {
+  transform-style: preserve-3d;
+  will-change: transform;
 }
 
-/* Pill / badge */
-.pill {
+.layer {
+  transform-style: preserve-3d;
+}
+
+/* Card lock-on.
+   
+   Cards do not tilt. A pointer-following 3D rotation is the single most
+   copied hover effect on the web, and with thirteen tiles it made the grid
+   wobble. This is drawn from the subject instead: approaching a card ACQUIRES
+   it, the way a scanner locks onto a target.
+
+   Three parts, all on the same 500ms beat: the surface lifts a shade, the
+   perimeter traces itself, and the corner brackets snap in (in the component).
+   Nothing rotates. Nothing floats. */
+
+.card-lock[data-locked="true"] {
+  background-color: var(--color-ink-600);
+  border-color: var(--color-ink-400);
+}
+
+/* The trace is a real stroke travelling the perimeter, not a fade. pathLength
+   is normalised to 100 in the markup so the dash maths is readable. */
+.card-trace rect {
+  stroke-dasharray: 8 92;
+  stroke-dashoffset: 0;
+  opacity: 0;
+  transition: opacity 0.25s linear;
+}
+
+.card-lock[data-locked="true"] .card-trace rect {
+  opacity: 0.85;
+  animation: trace-run 1.5s var(--ease-settle) infinite;
+}
+
+@keyframes trace-run {
+  from { stroke-dashoffset: 0; }
+  to   { stroke-dashoffset: -100; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-lock[data-locked="true"] .card-trace rect {
+    animation: none;
+    stroke-dasharray: none;
+    opacity: 0.4;
+  }
+}
+
+/* ===========================================================================
+   Bento grid.
+
+   Real bento: a fixed row rhythm with tiles spanning different numbers of rows
+   and columns, packed densely so the shapes interlock. Collapses to a single
+   column below lg, where spans are meaningless.
+   =========================================================================== */
+
+.bento {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+@media (min-width: 1024px) {
+  .bento {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    grid-auto-rows: minmax(112px, auto);
+    grid-auto-flow: row dense;
+    gap: 1.25rem;
+  }
+}
+
+/* ===========================================================================
+   Redaction — the signature element.
+
+   A bar sits over the text. On reveal it wipes away to the right, like a
+   marker being pulled off the page, and the text under it resolves from blur.
+   =========================================================================== */
+
+.redaction {
+  position: relative;
   display: inline-block;
-  border-radius: 9999px;
-  padding: 0.25rem 0.75rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.65);
-  transition: all 0.3s ease;
+  isolation: isolate;
 }
 
-.pill:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.15);
-  color: rgba(255, 255, 255, 0.85);
+.redaction > .redaction-content {
+  filter: blur(5px);
+  opacity: 0.45;
+  transition:
+    filter 0.5s var(--ease-settle),
+    opacity 0.5s var(--ease-settle);
 }
 
-/* Gradient text */
-.text-gradient {
-  background: linear-gradient(135deg, #fff 0%, rgba(255, 255, 255, 0.6) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.redaction[data-revealed="true"] > .redaction-content {
+  filter: blur(0);
+  opacity: 1;
 }
 
-.text-gradient-vivid {
-  background: linear-gradient(135deg, var(--accent-indigo), var(--accent-violet), var(--accent-cyan));
-  background-size: 200% 200%;
-  animation: gradient-flow 4s ease infinite;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.redaction > .redaction-bar {
+  position: absolute;
+  inset: -0.12em -0.3em;
+  z-index: 2;
+  background: var(--color-vellum);
+  transform-origin: right center;
+  transition: transform 0.55s var(--ease-wipe);
+  pointer-events: none;
 }
 
+.redaction[data-revealed="true"] > .redaction-bar {
+  transform: scaleX(0);
+}
 
-/* ── Tailwind Utilities ── */
-@layer utilities {
-  .bg-radial-soft {
-    background-image:
-      radial-gradient(1100px circle at 10% 10%, rgba(99, 102, 241, 0.12), transparent 55%),
-      radial-gradient(900px circle at 90% 20%, rgba(236, 72, 153, 0.08), transparent 55%),
-      radial-gradient(900px circle at 20% 90%, rgba(16, 185, 129, 0.06), transparent 55%),
-      linear-gradient(180deg, var(--bg-primary), var(--bg-primary));
+/* Grain. Sits over everything at very low opacity so large flat ink areas read
+   as paper stock rather than dead pixels. */
+.grain::after {
+  content: "";
+  position: fixed;
+  inset: -50%;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.028;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ===========================================================================
+   Reduced motion.
+
+   Honoured for real: transitions collapse, the WebGL scan field freezes on a
+   representative frame, and redactions start revealed so no content is ever
+   trapped behind an animation that will not play.
+   =========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
   }
 
-  .bg-gradient-soft {
-    background-image:
-      radial-gradient(120% 140% at 20% 0%, rgba(99, 102, 241, 0.15), transparent 55%),
-      radial-gradient(120% 140% at 90% 20%, rgba(236, 72, 153, 0.10), transparent 55%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 
-  .text-balance {
-    text-wrap: balance;
+  .redaction > .redaction-bar {
+    transform: scaleX(0);
   }
 
-  .animate-float {
-    animation: float 6s ease-in-out infinite;
+  .redaction > .redaction-content {
+    filter: none;
+    opacity: 1;
   }
 
-  .animate-float-slow {
-    animation: float-slow 8s ease-in-out infinite;
+  .card-lock {
+    transition: none;
+  }
+}
+
+/* Touch devices get no hover-dependent affordances — they are tap-driven.
+   Keyed to pointer capability, not to a width breakpoint, so a large
+   touchscreen gets the tap hint and a small mouse-driven window does not. */
+.touch-only {
+  display: none;
+}
+
+@media (hover: none) {
+  .hover-only {
+    display: none;
   }
 
-  .animate-shimmer {
-    animation: shimmer 3s ease infinite;
-  }
-
-  .animate-gradient-flow {
-    animation: gradient-flow 6s ease infinite;
-  }
-
-  .animate-pulse-glow {
-    animation: pulse-glow 3s ease-in-out infinite;
-  }
-
-  .animate-pulse-ring {
-    animation: pulse-ring 2s ease-out infinite;
-  }
-
-  .animate-spin-slow {
-    animation: spin-slow 20s linear infinite;
-  }
-
-  .animate-orb-1 {
-    animation: orb-drift-1 15s ease-in-out infinite;
-  }
-
-  .animate-orb-2 {
-    animation: orb-drift-2 18s ease-in-out infinite;
-  }
-
-  .animate-orb-3 {
-    animation: orb-drift-3 20s ease-in-out infinite;
+  .touch-only {
+    display: inline;
   }
 }
