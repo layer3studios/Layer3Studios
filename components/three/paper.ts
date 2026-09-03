@@ -65,8 +65,18 @@ function finish(c: HTMLCanvasElement): CanvasTexture {
   return tex;
 }
 
-const MONO = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
-const SERIF = "Georgia, 'Times New Roman', serif";
+/**
+ * The site's own faces, read from the page so the paper in the 3D scenes is
+ * set in the same type as everything else. next/font exposes them as CSS
+ * variables; a canvas needs the resolved family names.
+ */
+function face(varName: string, fallback: string): string {
+  if (typeof document === "undefined") return fallback;
+  const v = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+  return v ? `${v}, ${fallback}` : fallback;
+}
+const MONO = face("--font-mono", "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace");
+const SERIF = face("--font-display", "Georgia, 'Times New Roman', serif");
 
 const FILES: { name: string; lines: string[] }[] = [
   {

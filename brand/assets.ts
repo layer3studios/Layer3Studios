@@ -31,5 +31,5 @@ export const images = {
 
 export const documents = {
   /** Public sample report, linked from the proof section. */
-  sampleReport: "/brand/sample-report.pdf",
+  sampleReport: "/report",
 } as const;

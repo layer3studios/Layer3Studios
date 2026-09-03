@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { booking, ease, serviceList } from "@/brand";
+import { booking, company, ease, serviceList } from "@/brand";
 import { useBooking } from "@/components/booking/BookingContext";
 
 type Status = "idle" | "sending" | "sent";
@@ -14,9 +14,9 @@ type Status = "idle" | "sending" | "sent";
  * Three short steps, a progress rail on the left, one primary action at a
  * time. Steps slide horizontally; the card height animates with them.
  *
- * SUBMISSION IS A STUB. The form validates, pretends to send for a moment,
- * and shows the success state. Wire `submit()` to a real endpoint later; the
- * payload shape is already the one the /api/contact route accepts.
+ * On submit it posts to /api/enquiry, which emails the studio and sends the
+ * visitor an acknowledgement. A failure keeps the answers on screen and says
+ * what went wrong, so nothing typed is ever lost.
  */
 
 const slide = {
@@ -91,11 +91,35 @@ export default function BookingModal() {
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (!capture()) return;
+    setError(null);
     setStatus("sending");
-    // TODO: POST { ...data.current, worries, interest } to the real endpoint.
-    void { ...data.current, worries, interest };
-    await new Promise((r) => setTimeout(r, 900));
-    setStatus("sent");
+    try {
+      const res = await fetch("/api/enquiry", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          kind: "review",
+          repo: data.current.subject,
+          stack: data.current.stack,
+          name: data.current.name,
+          email: data.current.email,
+          company: data.current.company,
+          message: data.current.message,
+          worries,
+          interest,
+        }),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        setError(body.error ?? `That didn't send. Write to ${company.email} and we'll pick it up.`);
+        setStatus("idle");
+        return;
+      }
+      setStatus("sent");
+    } catch {
+      setError(`That didn't send. Check your connection, or write to ${company.email}.`);
+      setStatus("idle");
+    }
   }
 
   const t = { duration: reduce ? 0 : 0.42, ease: ease.settle };

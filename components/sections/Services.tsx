@@ -191,6 +191,7 @@ function Column({ service, index }: { service: Service; index: number }) {
           e.stopPropagation();
           openHire(service.id);
         }}
+        data-cursor="grab"
         className="group/btn mt-auto inline-flex w-fit items-center gap-3 pt-7 font-mono text-[0.72rem] uppercase tracking-[0.16em] text-ink-900"
       >
         <span className="relative">

@@ -2,7 +2,7 @@
 
 import { motion, useMotionValue, useSpring } from "framer-motion";
 import { useRef } from "react";
-import { contact, ease, promises, scale } from "@/brand";
+import { contact, ease, promises, scale, scope } from "@/brand";
 import { useBooking } from "@/components/booking/BookingContext";
 import SectionHeading from "@/components/ui/SectionHeading";
 
@@ -15,7 +15,7 @@ import SectionHeading from "@/components/ui/SectionHeading";
  * toward the cursor, and an orbit of the three promises circling it.
  */
 export default function Contact() {
-  const { openBooking, openHire } = useBooking();
+  const { openBooking, openHire, openScope } = useBooking();
   const slab = useRef<HTMLDivElement>(null);
 
   // Magnetic button: the button drifts toward the pointer within the slab.
@@ -100,8 +100,15 @@ export default function Contact() {
               </p>
               <button
                 type="button"
-                onClick={() => openHire()}
+                onClick={() => openScope()}
                 className="mt-5 font-mono text-[0.7rem] uppercase tracking-[0.16em] text-ink-900/60 underline decoration-ink-900/30 underline-offset-[6px] transition-colors hover:text-ink-900 hover:decoration-ink-900"
+              >
+                {scope.cta}
+              </button>
+              <button
+                type="button"
+                onClick={() => openHire()}
+                className="mt-3 font-mono text-[0.7rem] uppercase tracking-[0.16em] text-ink-900/60 underline decoration-ink-900/30 underline-offset-[6px] transition-colors hover:text-ink-900 hover:decoration-ink-900"
               >
                 Already know what you need? Hire us directly
               </button>

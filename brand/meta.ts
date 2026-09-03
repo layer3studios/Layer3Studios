@@ -30,6 +30,8 @@ export const promises = {
   weeklyCapacity: 4,
   /** Studio headcount. */
   teamSize: 3,
+  /** How long one free review takes, as written on the page. */
+  freeReviewHours: "two to three",
   /** Upper repo size accepted on the free tier. */
   freeRepoLimit: "250k lines",
 } as const;

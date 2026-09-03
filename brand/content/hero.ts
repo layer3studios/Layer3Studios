@@ -19,7 +19,7 @@ export const hero = {
   standfirst: `Send us the repository. ${promises.turnaroundDays} business days later you have a written report: what is exposed, where it lives, and what to fix first.`,
   cta: {
     primary: "Book the free review",
-    secondary: "Read a sample sheet",
+    secondary: "Read the sample report",
   },
   terms: [
     { value: `${promises.turnaroundDays}d`, label: "turnaround" },

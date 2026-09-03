@@ -21,3 +21,5 @@ export * from "./content/contact";
 export * from "./content/booking";
 export * from "./content/hire";
 export * from "./content/legal";
+export * from "./content/report";
+export * from "./content/scope";

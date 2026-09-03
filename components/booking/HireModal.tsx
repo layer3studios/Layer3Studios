@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { ease, hire, serviceList } from "@/brand";
+import { company, ease, hire, serviceList } from "@/brand";
 import { useBooking } from "@/components/booking/BookingContext";
 
 type Status = "idle" | "sending" | "sent";
@@ -18,9 +18,9 @@ type Status = "idle" | "sending" | "sent";
  *
  * When you send, the letter folds away and a stamp lands where it was.
  *
- * SUBMISSION IS A STUB. `submit()` waits, then shows the sent state. The
- * payload is exactly the letter on the left. A mailto fallback is always
- * visible under the button.
+ * On submit it posts to /api/enquiry, which emails the studio the letter on
+ * the left and sends an acknowledgement back. The mailto fallback under the
+ * button is always there, and it is what the error points to.
  */
 
 const line =
@@ -84,7 +84,7 @@ export default function HireModal() {
   const [timeline, setTimeline] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [company, setCompany] = useState("");
+  const [org, setOrg] = useState("");
   const [brief, setBrief] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -96,7 +96,7 @@ export default function HireModal() {
     setTimeline(null);
     setName("");
     setEmail("");
-    setCompany("");
+    setOrg("");
     setBrief("");
     setError(null);
     const prev = document.body.style.overflow;
@@ -119,12 +119,12 @@ export default function HireModal() {
       .join(" · ");
     return {
       re: re || "a project",
-      from: name ? `${name}${company ? `, ${company}` : ""}` : "—",
+      from: name ? `${name}${org ? `, ${org}` : ""}` : "—",
       reply: email || "—",
       body: brief || hire.fields.brief.placeholder,
       empty: !brief,
     };
-  }, [serviceTitle, sizeLabel, timeline, name, company, email, brief]);
+  }, [serviceTitle, sizeLabel, timeline, name, org, email, brief]);
 
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -138,10 +138,32 @@ export default function HireModal() {
     }
     setError(null);
     setStatus("sending");
-    // TODO: send as an email. Payload:
-    void { name, email, company, service, size, timeline, brief, letter };
-    await new Promise((r) => setTimeout(r, 900));
-    setStatus("sent");
+    try {
+      const res = await fetch("/api/enquiry", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          kind: "hire",
+          name,
+          email,
+          company: org,
+          service: serviceList.find((s) => s.id === service)?.title ?? "",
+          size: hire.sizes.find((s) => s.id === size)?.label ?? "",
+          timeline,
+          brief,
+        }),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        setError(body.error ?? `That didn't send. Write to ${company.email} and we'll pick it up.`);
+        setStatus("idle");
+        return;
+      }
+      setStatus("sent");
+    } catch {
+      setError(`That didn't send. Check your connection, or write to ${company.email}.`);
+      setStatus("idle");
+    }
   }
 
   const mailto = `mailto:${hire.email}?subject=${encodeURIComponent(`Hire: ${letter.re}`)}`;
@@ -186,7 +208,7 @@ export default function HireModal() {
       </label>
       <label className="block md:col-span-2">
         <span className="label mb-1 block">{hire.fields.company.label}</span>
-        <input value={company} onChange={(e) => setCompany(e.target.value)} autoComplete="organization" placeholder={hire.fields.company.placeholder} className={line} />
+        <input value={org} onChange={(e) => setOrg(e.target.value)} autoComplete="organization" placeholder={hire.fields.company.placeholder} className={line} />
       </label>
     </div>,
     <label key="brief" className="block">

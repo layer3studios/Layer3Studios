@@ -12,6 +12,7 @@ import {
   reviewChecks,
   reviewStats,
   scale,
+  scope,
   type ReviewCheck,
 } from "@/brand";
 import { useBooking } from "@/components/booking/BookingContext";
@@ -67,7 +68,7 @@ export default function Review() {
   const { allowWebgl, ready } = useDeviceCapabilities();
   const { ref: stageRef, onScreen } = useOnScreen<HTMLDivElement>("200px");
   const { pointer, sectionBind, stageBind } = useStagePointer();
-  const { openBooking } = useBooking();
+  const { openBooking, openScope } = useBooking();
   const reduce = useReducedMotion();
 
   const state: CodebaseState = active < 0 ? "idle" : STATES[active];
@@ -200,19 +201,36 @@ export default function Review() {
               </motion.span>
             ))}
           </p>
-          <motion.button
-            type="button"
-            onClick={() => openBooking()}
-            variants={{
-              hidden: { opacity: 0, y: 16 },
-              shown: { opacity: 1, y: 0, transition: { delay: 0.9, duration: 0.6, ease: ease.settle } },
-            }}
-            whileTap={{ scale: 0.97 }}
-            className="group mt-8 inline-flex items-center gap-4 rounded-full bg-vellum py-4 pl-7 pr-2 font-medium text-ink-900"
-          >
-            Book the free review
-            <span className="grid size-9 place-items-center rounded-full bg-ink-900 text-vellum transition-transform duration-300 group-hover:rotate-45">↗</span>
-          </motion.button>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <motion.button
+              type="button"
+              onClick={() => openBooking()}
+              variants={{
+                hidden: { opacity: 0, y: 16 },
+                shown: { opacity: 1, y: 0, transition: { delay: 0.9, duration: 0.6, ease: ease.settle } },
+              }}
+              whileTap={{ scale: 0.97 }}
+              className="group inline-flex items-center gap-4 rounded-full bg-vellum py-4 pl-7 pr-2 font-medium text-ink-900"
+            >
+              Book the free review
+              <span className="grid size-9 place-items-center rounded-full bg-ink-900 text-vellum transition-transform duration-300 group-hover:rotate-45">↗</span>
+            </motion.button>
+            <motion.button
+              type="button"
+              onClick={() => openScope()}
+              variants={{
+                hidden: { opacity: 0, y: 16 },
+                shown: { opacity: 1, y: 0, transition: { delay: 1.0, duration: 0.6, ease: ease.settle } },
+              }}
+              whileTap={{ scale: 0.97 }}
+              className="group inline-flex items-center gap-4 rounded-full border border-ink-400 py-4 pl-7 pr-2 font-medium text-vellum transition-colors hover:border-vellum"
+            >
+              {scope.cta}
+              <span className="grid size-9 place-items-center rounded-full border border-ink-400 text-vellum transition-all duration-300 group-hover:border-vellum group-hover:bg-vellum group-hover:text-ink-900">
+                ?
+              </span>
+            </motion.button>
+          </div>
         </motion.div>
       </div>
     </section>

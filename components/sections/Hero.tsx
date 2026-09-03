@@ -124,7 +124,7 @@ export default function Hero() {
               </span>
             </motion.button>
             <a
-              href="#proof"
+              href="/report"
               className="font-mono text-[0.8125rem] uppercase tracking-[0.14em] text-ink-900/70 underline decoration-ink-900/30 underline-offset-[6px] transition-colors hover:text-ink-900 hover:decoration-ink-900"
             >
               {hero.cta.secondary}

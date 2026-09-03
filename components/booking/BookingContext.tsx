@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 
 const BookingModal = dynamic(() => import("@/components/booking/BookingModal"), { ssr: false });
 const HireModal = dynamic(() => import("@/components/booking/HireModal"), { ssr: false });
+const ScopeModal = dynamic(() => import("@/components/booking/ScopeModal"), { ssr: false });
 
 interface BookingState {
   open: boolean;
@@ -17,6 +18,10 @@ interface BookingState {
   hireService: string | null;
   openHire: (service?: string) => void;
   closeHire: () => void;
+  /** What is in the free report. */
+  scopeOpen: boolean;
+  openScope: () => void;
+  closeScope: () => void;
 }
 
 const Ctx = createContext<BookingState | null>(null);
@@ -45,9 +50,17 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   }, []);
   const closeHire = useCallback(() => setHireOpen(false), []);
 
+  const [scopeOpen, setScopeOpen] = useState(false);
+  const openScope = useCallback(() => {
+    setOpen(false);
+    setHireOpen(false);
+    setScopeOpen(true);
+  }, []);
+  const closeScope = useCallback(() => setScopeOpen(false), []);
+
   const value = useMemo(
-    () => ({ open, interest, openBooking, closeBooking, hireOpen, hireService, openHire, closeHire }),
-    [open, interest, openBooking, closeBooking, hireOpen, hireService, openHire, closeHire],
+    () => ({ open, interest, openBooking, closeBooking, hireOpen, hireService, openHire, closeHire, scopeOpen, openScope, closeScope }),
+    [open, interest, openBooking, closeBooking, hireOpen, hireService, openHire, closeHire, scopeOpen, openScope, closeScope],
   );
 
   return (
@@ -55,6 +68,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
       {children}
       <BookingModal />
       <HireModal />
+      <ScopeModal />
     </Ctx.Provider>
   );
 }

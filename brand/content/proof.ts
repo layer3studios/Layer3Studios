@@ -16,7 +16,7 @@ export const proof = {
       { label: "Time to find", value: "11 minutes" },
     ],
   },
-  sampleReportLabel: "See a full sample report",
+  sampleReportLabel: "Read the sample report",
   /** Shown while there is no published finding yet. */
   placeholderNote:
     "Replace this with a real anonymised finding. It is the single highest-value asset on the page.",
