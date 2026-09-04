@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useReducedMotion, useScroll, useSpring } from 
 import { useEffect, useState } from "react";
 import { company, ease, navSections, severity } from "@/brand";
 import { useBooking } from "@/components/booking/BookingContext";
+import Mark from "@/components/ui/Mark";
 
 /**
  * The mobile nav: a dock, not an island.
@@ -175,13 +176,13 @@ export default function MobileDock() {
         animate={{ y: hidden ? 140 : 0, opacity: hidden ? 0.5 : 1 }}
         transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 380, damping: 34 }}
       >
-        <div className="pointer-events-auto relative flex h-14 items-center gap-2 overflow-hidden rounded-full border border-ink-500/80 bg-ink-800/95 pl-4 pr-1.5 shadow-[0_18px_60px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+        <div className="pointer-events-auto relative flex h-14 items-center gap-2 overflow-hidden rounded-full border border-ink-500/80 bg-ink-800/95 pl-4 pr-1.5 shadow-[0_18px_60px_rgba(0,0,0,0.6)] backdrop-blur-md">
           <motion.div
             aria-hidden="true"
             className="absolute inset-x-0 top-0 h-px origin-left"
             style={{ scaleX: progress, background: severity.low, opacity: 0.8 }}
           />
-          <span className="font-mono text-[0.75rem] tracking-tight text-vellum">{company.name}</span>
+          <span className="inline-flex items-center gap-2 font-mono text-[0.75rem] tracking-tight text-vellum"><Mark className="size-4" />{company.name}</span>
 
           <button
             type="button"

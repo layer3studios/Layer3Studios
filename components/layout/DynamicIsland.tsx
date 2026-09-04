@@ -9,6 +9,7 @@ import {
 } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { company, islandSpring, navSections, severity } from "@/brand";
+import Mark from "@/components/ui/Mark";
 
 /**
  * The navigation, built as a Dynamic Island.
@@ -64,7 +65,7 @@ export default function DynamicIsland() {
   /** The morph itself. Reduced motion gets the shape change without the spring. */
   const morph = reduceMotion ? { duration: 0.15 } : islandSpring;
   /** Layer cross-fade. Runs *with* the morph, never before or after it. */
-  const fade = { duration: reduceMotion ? 0.12 : 0.18, ease: [0.16, 1, 0.3, 1] as const };
+  const fade = { duration: reduceMotion ? 0.1 : 0.14, ease: [0.16, 1, 0.3, 1] as const };
 
   // Which section are we in? Drives the label inside the collapsed island.
   useEffect(() => {
@@ -156,7 +157,7 @@ export default function DynamicIsland() {
       <motion.div
         layout
         transition={morph}
-        className="pointer-events-auto relative overflow-hidden rounded-[28px] border border-ink-500/80 bg-ink-800/92 shadow-[0_18px_60px_rgba(0,0,0,0.6)] backdrop-blur-xl"
+        className="pointer-events-auto relative overflow-hidden rounded-[28px] border border-ink-500/80 bg-ink-800/92 shadow-[0_18px_60px_rgba(0,0,0,0.6)] backdrop-blur-md"
         style={{ willChange: "transform" }}
       >
         {/* Scan progress. The island carries a live readout of how far through
@@ -193,31 +194,28 @@ export default function DynamicIsland() {
             transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
           />
 
+          <Mark className="size-4 text-vellum" />
           <span className="font-mono text-[0.8125rem] tracking-tight text-vellum">
             {company.name}
           </span>
 
           {/* Once you have scrolled, the island reports where you are.
-              The label is mounted and unmounted rather than animated to
-              `width: 0`: animating its width fights the container's `layout`
-              spring, which is already measuring this layer, and the two
-              settled against each other leaving the text permanently clipped
-              mid-word. Mounting changes the layer's natural width, the
-              container springs to it, and the text only cross-fades. */}
-          <AnimatePresence initial={false}>
-            {scrolled && (
-              <motion.span
-                key="section-label"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={fade}
-                className="whitespace-nowrap border-l border-ink-500 pl-3 text-[0.8125rem] text-muted"
-              >
-                {activeLabel}
-              </motion.span>
-            )}
-          </AnimatePresence>
+              The label stays mounted and its width is animated between 0 and
+              auto. The container has no layout work to do here: it simply
+              follows the label's width frame by frame, so it opens and closes
+              at the same pace. (Unmounting the label let the container snap
+              shut, because the size change landed after its layout spring
+              had already measured.) The negative margin cancels the flex gap
+              while the label is closed. */}
+          <motion.span
+            initial={false}
+            animate={{ width: scrolled ? "auto" : 0, opacity: scrolled ? 1 : 0, marginLeft: scrolled ? 0 : -12 }}
+            transition={reduceMotion ? { duration: 0.12 } : { type: "spring", stiffness: 380, damping: 34, mass: 0.9, opacity: { duration: 0.16 } }}
+            className="inline-block overflow-hidden whitespace-nowrap"
+            aria-hidden={!scrolled}
+          >
+            <span className="inline-block border-l border-ink-500 pl-3 text-[0.8125rem] text-muted">{activeLabel}</span>
+          </motion.span>
 
           <span
             aria-hidden="true"
@@ -239,7 +237,7 @@ export default function DynamicIsland() {
           className={`${layer(expanded)} flex w-[min(88vw,30rem)] flex-col p-2`}
         >
           <div className="flex items-center justify-between px-3 pb-2 pt-1">
-            <span className="label">{company.name}</span>
+            <span className="label inline-flex items-center gap-2"><Mark className="size-3.5 text-vellum" />{company.name}</span>
             <button
               type="button"
               onClick={() => setExpanded(false)}

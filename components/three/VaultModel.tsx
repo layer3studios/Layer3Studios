@@ -20,6 +20,7 @@ import {
   Vector3,
 } from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
+import Warm from "@/components/three/Warm";
 import { makeFileTexture, makeReportTexture } from "@/components/three/paper";
 import type { StagePointer } from "@/hooks/useStagePointer";
 
@@ -477,12 +478,13 @@ export default function VaultModel({
     <Canvas
       camera={{ fov: 32, position: [0, 0.35, 7.4] }}
       dpr={[1, 1.75]}
-      frameloop={active ? "always" : "never"}
+      frameloop={active ? "always" : "demand"}
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
       style={{ position: "absolute", inset: 0, pointerEvents: "none" }}
       onCreated={({ gl }) => gl.setClearAlpha(0)}
     >
       <Frame />
+      <Warm delay={1500} />
       <ambientLight intensity={0.35} />
       <directionalLight position={[-4, 6, 5]} intensity={1.6} />
       <directionalLight position={[5, -2, -4]} intensity={0.4} />

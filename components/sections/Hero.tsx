@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { motion, useReducedMotion } from "framer-motion";
 import { hero } from "@/brand";
 import { useBooking } from "@/components/booking/BookingContext";
+import Mark from "@/components/ui/Mark";
 
 const ProofSheet = dynamic(() => import("@/components/hero/ProofSheet"), { ssr: true });
 
@@ -56,7 +57,7 @@ export default function Hero() {
           {...fade(at(0.05))}
           className="grid grid-cols-2 gap-3 border-b border-ink-900 pb-3 font-mono text-[0.6rem] uppercase tracking-[0.12em] text-ink-900/60 sm:grid-cols-3 sm:text-[0.6875rem] sm:tracking-[0.16em]"
         >
-          <span>{hero.runningHead.left}</span>
+          <span className="inline-flex items-center gap-2"><Mark className="size-3.5 text-ink-900" />{hero.runningHead.left}</span>
           <span className="hidden text-center sm:block">{hero.runningHead.centre}</span>
           <span className="whitespace-nowrap text-right">
             <span className="hidden sm:inline">{hero.runningHead.right}</span>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { company, type LegalPage as LegalPageContent } from "@/brand";
+import Mark from "@/components/ui/Mark";
 
 /**
  * A sheet of paper for the three small pages.
@@ -20,6 +21,7 @@ export default function LegalPage({ page }: { page: LegalPageContent }) {
         <header className="flex items-center justify-between gap-4 border-b border-ink-900 pb-3 font-mono text-[0.65rem] uppercase tracking-[0.16em] text-ink-900/60">
           <Link href="/" className="group inline-flex items-center gap-2 text-ink-900 transition-colors hover:text-ink-900/60">
             <span className="transition-transform duration-300 group-hover:-translate-x-0.5">←</span>
+            <Mark className="size-3.5" />
             {company.name}
           </Link>
           <span className="hidden sm:inline">{page.eyebrow}</span>

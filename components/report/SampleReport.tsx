@@ -4,6 +4,7 @@ import Link from "next/link";
 import { animate, motion, useReducedMotion } from "framer-motion";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { company, ease, report, severityLabel, severityWeight, type ReportFinding, type SeverityLevel } from "@/brand";
+import Mark from "@/components/ui/Mark";
 
 /**
  * The sample report, as a deck.
@@ -446,6 +447,7 @@ export default function SampleReport() {
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-[var(--gutter)] sm:px-[max(var(--gutter),3rem)]">
           <Link href="/" className="pointer-events-auto group inline-flex items-center gap-2 font-mono text-[0.65rem] uppercase tracking-[0.16em] text-muted hover:text-vellum">
             <span className="transition-transform duration-300 group-hover:-translate-x-0.5">←</span>
+            <Mark className="size-3.5" />
             {company.name}
           </Link>
           <div className="pointer-events-auto hidden items-center gap-1.5 sm:flex">

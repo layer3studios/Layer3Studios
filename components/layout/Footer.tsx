@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { company, ease, footer, promises, scale } from "@/brand";
 import { useBooking } from "@/components/booking/BookingContext";
+import Mark from "@/components/ui/Mark";
 
 /**
  * Footer.
@@ -33,6 +34,20 @@ export default function Footer() {
       </div>
 
       <div className="mx-auto max-w-6xl px-[var(--gutter)]">
+        {/* The mark, at a size where the drawing can be read. */}
+        <motion.div
+          initial={{ opacity: 0, y: 24, rotateY: -20 }}
+          whileInView={{ opacity: 1, y: 0, rotateY: 0 }}
+          viewport={{ once: true, amount: 0.6 }}
+          whileHover={{ rotateY: 14, rotateX: -6 }}
+          transition={{ type: "spring", stiffness: 160, damping: 20 }}
+          className="mb-10 w-fit text-vellum"
+          style={{ perspective: "900px", transformStyle: "preserve-3d" }}
+          aria-hidden="true"
+        >
+          <Mark className="size-24 sm:size-32" />
+        </motion.div>
+
         <motion.p
           initial="hidden"
           whileInView="shown"
@@ -74,7 +89,7 @@ export default function Footer() {
 
         <div className="mt-16 flex flex-col gap-10 border-t border-ink-500 pt-10 md:flex-row md:justify-between">
           <div>
-            <p className="font-mono text-[0.9375rem] text-vellum">{company.name}</p>
+            <p className="inline-flex items-center gap-2.5 font-mono text-[0.9375rem] text-vellum"><Mark className="size-6" />{company.name}</p>
             <a
               href={`mailto:${company.email}`}
               className="mt-2 block text-muted underline-offset-4 transition-colors hover:text-vellum hover:underline"

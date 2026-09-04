@@ -4,6 +4,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import { Color, type Group, type InstancedMesh, MathUtils, type Mesh, Object3D, Quaternion, Euler, Vector3 } from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
+import Warm from "@/components/three/Warm";
 import { makeFileTexture } from "@/components/three/paper";
 import type { StagePointer } from "@/hooks/useStagePointer";
 
@@ -280,12 +281,13 @@ export default function CodebaseModel({
     <Canvas
       camera={{ fov: 34, position: [0, 0, 6] }}
       dpr={[1, 1.75]}
-      frameloop={active ? "always" : "never"}
+      frameloop={active ? "always" : "demand"}
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
       style={{ position: "absolute", inset: 0, pointerEvents: "none" }}
       onCreated={({ gl }) => gl.setClearAlpha(0)}
     >
       <Resize />
+      <Warm delay={1200} />
       <ambientLight intensity={0.6} />
       <directionalLight position={[-4, 5, 6]} intensity={2.8} />
       <directionalLight position={[5, -3, -4]} intensity={0.7} />

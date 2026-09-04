@@ -2,6 +2,7 @@
 
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Float } from "@react-three/drei";
+import Warm from "@/components/three/Warm";
 import { useMemo, useRef, type RefObject } from "react";
 import { Color, type Group, type InstancedMesh, MathUtils, Object3D } from "three";
 
@@ -165,7 +166,7 @@ export default function ServiceModel({
     <Canvas
       camera={{ fov: 32, position: [0, 0, 6] }}
       dpr={[1, 1.75]}
-      frameloop={active ? "always" : "never"}
+      frameloop={active ? "always" : "demand"}
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
       style={{ position: "absolute", inset: 0, pointerEvents: "none" }}
       onCreated={({ gl }) => gl.setClearAlpha(0)}
@@ -173,6 +174,7 @@ export default function ServiceModel({
       <ambientLight intensity={paper ? 1.4 : 0.35} />
       <directionalLight position={[-3, 4, 5]} intensity={paper ? 3.2 : 2.2} />
       <directionalLight position={[4, -2, -3]} intensity={paper ? 1.6 : 0.6} />
+      <Warm delay={kind === "shield" ? 300 : kind === "wrench" ? 600 : 900} />
       <Decay pulse={pulse} />
       <Float speed={1.6} rotationIntensity={0.4} floatIntensity={0.8}>
         {kind === "shield" && <Shield pulse={pulse} ink={core} wire={wire} />}
