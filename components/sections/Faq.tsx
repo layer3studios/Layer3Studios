@@ -33,23 +33,27 @@ export default function Faq() {
   // lifts the sheet beneath, the way a card lifts off a stack.
   const dragX = useMotionValue(0);
   const dragRotate = useTransform(dragX, [-240, 0, 240], [-6, 0, 6]);
-  const deckLift = useTransform(dragX, [-240, 0, 240], [1, 0, 1]);
-  const deckScale = useTransform(deckLift, [0, 1], [1, 1.015]);
-  const deckY = useTransform(deckLift, [0, 1], [0, -6]);
 
   const onDragEnd = (_: unknown, info: PanInfo) => {
+    dragX.set(0);
     const { offset, velocity } = info;
     // A decisive flick or a long enough pull turns the card; anything less
     // springs back.
-    if (offset.x < -70 || velocity.x < -450) go(active + 1);
-    else if (offset.x > 70 || velocity.x > 450) go(active - 1);
+    if (offset.x < -70 || velocity.x < -450) go(1, true);
+    else if (offset.x > 70 || velocity.x > 450) go(-1, true);
   };
 
+  const activeRef = useRef(0);
+  activeRef.current = active;
+
+  /** Move by a delta, or jump to an index. Reads the live index from a ref. */
   const go = useCallback(
-    (to: number) => {
+    (to: number, relative = false) => {
       const n = faqItems.length;
-      const next = ((to % n) + n) % n;
-      setDir(next > active || (active === n - 1 && next === 0) ? 1 : -1);
+      const cur = activeRef.current;
+      const next = (((relative ? cur + to : to) % n) + n) % n;
+      if (next === cur) return;
+      setDir(next > cur || (cur === n - 1 && next === 0) ? 1 : -1);
       setActive(next);
       // Below lg the card sits above the list, so a tap further down the
       // list would otherwise change a card the reader cannot see.
@@ -57,19 +61,20 @@ export default function Faq() {
         cardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     },
-    [active],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
   );
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const root = document.getElementById("faq");
       if (!root || !root.contains(document.activeElement)) return;
-      if (e.key === "ArrowDown" || e.key === "j") go(active + 1);
-      if (e.key === "ArrowUp" || e.key === "k") go(active - 1);
+      if (e.key === "ArrowDown" || e.key === "j") go(1, true);
+      if (e.key === "ArrowUp" || e.key === "k") go(-1, true);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [active, go]);
+  }, [go]);
 
   const words = item.a.split(" ");
 
@@ -151,106 +156,144 @@ export default function Faq() {
             style={{ perspective: "1600px" }}
           >
             <div ref={cardRef} className="relative min-h-[26rem] scroll-mt-[calc(var(--island-clear)+1rem)] sm:min-h-[30rem]" style={{ transformStyle: "preserve-3d" }}>
-              <AnimatePresence mode="wait" custom={dir} initial={false}>
-                <motion.article
-                  key={active}
-                  custom={dir}
-                  variants={{
-                    enter: (d: number) =>
-                      reduce ? { opacity: 0 } : { x: d * 140, rotateY: d * 28, rotateZ: d * 3, scale: 0.96, opacity: 0 },
-                    centre: { x: 0, rotateY: 0, rotateZ: 0, scale: 1, opacity: 1 },
-                    exit: (d: number) =>
-                      reduce ? { opacity: 0 } : { x: d * -160, rotateY: d * -24, rotateZ: d * -4, scale: 0.96, opacity: 0 },
-                  }}
-                  initial="enter"
-                  animate="centre"
-                  exit="exit"
-                  transition={
-                    reduce
-                      ? { duration: 0.15 }
-                      : { type: "spring", stiffness: 300, damping: 30, mass: 0.9, opacity: { duration: 0.22 } }
-                  }
-                  drag={reduce ? false : "x"}
-                  dragConstraints={{ left: 0, right: 0 }}
-                  dragElastic={0.55}
-                  dragMomentum={false}
-                  onDragEnd={onDragEnd}
-                  className="paper absolute inset-0 flex cursor-grab touch-pan-y select-none flex-col rounded-3xl bg-vellum p-7 text-ink-900 shadow-[0_40px_100px_rgba(0,0,0,0.6)] active:cursor-grabbing sm:p-10"
-                  style={{
-                    x: dragX,
-                    rotateZ: dragRotate,
-                    transformOrigin: "50% 120%",
-                    backfaceVisibility: "hidden",
-                  }}
-                >
-                  {/* Card head. */}
-                  <div className="flex items-center justify-between border-b border-ink-900 pb-4 font-mono text-[0.65rem] uppercase tracking-[0.16em] text-ink-900/55">
-                    <span>Question {String(active + 1).padStart(2, "0")}</span>
-                    <span>{faq.eyebrow}</span>
-                  </div>
+              {/*
+                The deck. The next two questions are real cards sitting under
+                the top one, so turning a card reveals the card beneath it
+                rather than an empty placeholder. Each card animates to the
+                pose of its depth; the leaving card slides off the top while
+                the one beneath rises into its place.
+              */}
+              <AnimatePresence custom={dir} initial={false}>
+                {[0, 1, 2].map((depth) => {
+                  const idx = (active + depth) % faqItems.length;
+                  const q = faqItems[idx];
+                  const top = depth === 0;
+                  return (
+                    <motion.article
+                      key={idx}
+                      custom={dir}
+                      // A card arriving on top (stepping back) comes in from the
+                      // side. A card arriving at the back of the stack fades up
+                      // into its slot; it should never fly across the screen.
+                      initial={
+                        reduce
+                          ? { opacity: 0 }
+                          : top
+                            ? { x: dir * 140, rotateZ: dir * 4, scale: 0.96, opacity: 0, y: 0 }
+                            : { x: 0, rotateZ: 0, scale: 0.9, opacity: 0, y: depth * 14 + 24 }
+                      }
+                      animate={{
+                        x: 0,
+                        rotateZ: 0,
+                        y: depth * 14,
+                        scale: 1 - depth * 0.04,
+                        opacity: depth === 2 ? 0.85 : 1,
+                      }}
+                      // Stepping forward, the leaving card is the top one: it
+                      // slides off. Stepping back, the leaving card is the deepest
+                      // one: it just sinks away behind the stack.
+                      exit={
+                        reduce
+                          ? { opacity: 0 }
+                          : dir > 0
+                            ? { x: -180, rotateZ: -6, opacity: 0 }
+                            : { y: 60, scale: 0.86, opacity: 0 }
+                      }
+                      transition={
+                        reduce
+                          ? { duration: 0.15 }
+                          : {
+                              type: "spring",
+                              stiffness: 300,
+                              damping: 30,
+                              mass: 0.9,
+                              opacity: { duration: 0.22 },
+                            }
+                      }
+                      drag={top && !reduce ? "x" : false}
+                      dragConstraints={{ left: 0, right: 0 }}
+                      dragElastic={0.55}
+                      dragMomentum={false}
+                      onDrag={top ? (_, info) => dragX.set(info.offset.x) : undefined}
+                      onDragEnd={top ? onDragEnd : undefined}
+                      aria-hidden={top ? undefined : true}
+                      className={`paper absolute inset-0 select-none rounded-3xl bg-vellum p-7 text-ink-900 shadow-[0_40px_100px_rgba(0,0,0,0.6)] sm:p-10 ${
+                        top ? "cursor-grab touch-pan-y active:cursor-grabbing" : "pointer-events-none"
+                      }`}
+                      style={{ transformOrigin: "50% 120%", zIndex: 30 - depth * 10 }}
+                    >
+                      <motion.div
+                        className="flex h-full flex-col"
+                        style={top ? { rotateZ: dragRotate, transformOrigin: "50% 120%" } : undefined}
+                      >
+                      {/* Card head. */}
+                      <div className="flex items-center justify-between border-b border-ink-900 pb-4 font-mono text-[0.65rem] uppercase tracking-[0.16em] text-ink-900/55">
+                        <span>Question {String(idx + 1).padStart(2, "0")}</span>
+                        <span>{faq.eyebrow}</span>
+                      </div>
 
-                  <h3 className="font-display mt-8 text-ink-900" style={{ fontSize: "clamp(1.8rem, 1.2rem + 2.2vw, 3rem)", lineHeight: 1.02 }}>
-                    {item.q}
-                  </h3>
+                      <h3 className="font-display mt-8 text-ink-900" style={{ fontSize: "clamp(1.8rem, 1.2rem + 2.2vw, 3rem)", lineHeight: 1.02 }}>
+                        {q.q}
+                      </h3>
 
-                  <p className="mt-7 max-w-xl text-[1.0625rem] leading-relaxed text-ink-900/75" aria-label={item.a}>
-                    {words.map((w, i) => (
-                      <motion.span
-                        key={`${active}-${i}`}
-                        aria-hidden="true"
-                        className="inline-block"
-                        initial={reduce ? false : { opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.25 + i * 0.015, duration: 0.4, ease: ease.enter }}
-                      >
-                        {w}&nbsp;
-                      </motion.span>
-                    ))}
-                  </p>
+                      <p className="mt-7 max-w-xl text-[1.0625rem] leading-relaxed text-ink-900/75" aria-label={q.a}>
+                        {top
+                          ? words.map((w, i) => (
+                              <motion.span
+                                key={`${idx}-${i}`}
+                                aria-hidden="true"
+                                className="inline-block"
+                                initial={reduce ? false : { opacity: 0, y: 8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.25 + i * 0.015, duration: 0.4, ease: ease.enter }}
+                              >
+                                {w}&nbsp;
+                              </motion.span>
+                            ))
+                          : q.a}
+                      </p>
 
-                  {/* Card foot. */}
-                  <div className="mt-auto flex flex-wrap items-center justify-between gap-4 border-t border-ink-900/15 pt-5">
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => go(active - 1)}
-                        aria-label="Previous question"
-                        className="grid size-10 place-items-center rounded-full border border-ink-900/20 transition-colors hover:bg-ink-900 hover:text-vellum"
-                      >
-                        ←
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => go(active + 1)}
-                        aria-label="Next question"
-                        className="grid size-10 place-items-center rounded-full border border-ink-900/20 transition-colors hover:bg-ink-900 hover:text-vellum"
-                      >
-                        →
-                      </button>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <span className="touch-only font-mono text-[0.65rem] uppercase tracking-[0.16em] text-ink-900/40">
-                        Swipe
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => openHire()}
-                        className="font-mono text-[0.7rem] uppercase tracking-[0.16em] text-ink-900/60 underline decoration-ink-900/30 underline-offset-[6px] transition-colors hover:text-ink-900 hover:decoration-ink-900"
-                      >
-                        Not here? Ask us directly
-                      </button>
-                    </div>
-                  </div>
-                </motion.article>
+                      {/* Card foot. */}
+                      <div className="mt-auto flex flex-wrap items-center justify-between gap-4 border-t border-ink-900/15 pt-5">
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => go(-1, true)}
+                            tabIndex={top ? 0 : -1}
+                            aria-label="Previous question"
+                            className="grid size-10 place-items-center rounded-full border border-ink-900/20 transition-colors hover:bg-ink-900 hover:text-vellum"
+                          >
+                            ←
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => go(1, true)}
+                            tabIndex={top ? 0 : -1}
+                            aria-label="Next question"
+                            className="grid size-10 place-items-center rounded-full border border-ink-900/20 transition-colors hover:bg-ink-900 hover:text-vellum"
+                          >
+                            →
+                          </button>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <span className="touch-only font-mono text-[0.65rem] uppercase tracking-[0.16em] text-ink-900/40">
+                            Swipe
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => openHire()}
+                            tabIndex={top ? 0 : -1}
+                            className="font-mono text-[0.7rem] uppercase tracking-[0.16em] text-ink-900/60 underline decoration-ink-900/30 underline-offset-[6px] transition-colors hover:text-ink-900 hover:decoration-ink-900"
+                          >
+                            Not here? Ask us directly
+                          </button>
+                        </div>
+                      </div>
+                      </motion.div>
+                    </motion.article>
+                  );
+                })}
               </AnimatePresence>
-
-              {/* The rest of the deck, peeking out beneath. */}
-              <motion.div
-                aria-hidden="true"
-                className="absolute inset-x-3 -bottom-2 top-3 -z-10 rounded-3xl bg-vellum/40"
-                style={{ scale: deckScale, y: deckY }}
-              />
-              <div aria-hidden="true" className="absolute inset-x-6 -bottom-4 top-6 -z-20 rounded-3xl bg-vellum/20" />
             </div>
           </motion.div>
         </div>
